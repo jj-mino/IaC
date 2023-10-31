@@ -1,0 +1,92 @@
+apiVersion: 1
+groups:
+    - orgId: 1
+      name: WARNING
+      folder: alert-rules
+      interval: 2m
+      rules:
+        - uid: QTYTpeP46
+          title: EKS Pod uwsgi busy > 95%
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: P1809F7CD0C75ACF3
+              model:
+                editorMode: code
+                expr: 100*(uwsgi_workers_busy{kubernetes_namespace=~"bank|bank-async|bank-logins|bank-logins-async|card|card-async|card-gw|core|core-async|credit-async|misc|newton|newton-async|sherlock"}/uwsgi_workers_max{kubernetes_namespace=~"bank|bank-async|bank-logins|bank-logins-async|card|card-async|card-gw|core|core-async|credit-async|misc|newton|newton-async|sherlock"}) > -1
+                hide: false
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: true
+                refId: A
+            - refId: B
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params: []
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - B
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                hide: false
+                intervalMs: 1000
+                maxDataPoints: 43200
+                reducer: last
+                refId: B
+                type: reduce
+            - refId: C
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 95
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: B
+                hide: false
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          noDataState: NoData
+          execErrState: Error
+          for: 5m
+          annotations:
+            summary: '• {{ $values.B.Labels.namespace }}/{{ $values.B.Labels.pod }} [{{ $values.B.Labels.container }}]: `{{ printf "%.2f" $values.B.Value }}%`'
+          labels:
+            env_code: ${env_code}
+            severity: warning
+          isPaused: false

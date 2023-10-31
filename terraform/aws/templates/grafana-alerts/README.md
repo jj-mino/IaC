@@ -1,0 +1,1 @@
+Exported manually created grafana alert rules from "https://<grafana hostname>/api/v1/provisioning/alert-rules/export".

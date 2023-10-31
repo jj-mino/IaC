@@ -1,0 +1,17 @@
+# https://github.com/bitnami/charts/blob/main/bitnami/external-dns/values.yaml
+
+serviceAccount:
+  create: true
+  name: ${service_account_name}
+  annotations:
+    eks.amazonaws.com/role-arn: ${iam_role_arn}
+provider: "${provider}"
+txtOwnerId: "${txtOwnerId}"
+domainFilters: 
+  - "${domainFilters}"
+policy: "${policy}"
+sources:
+  - ingress
+aws:
+  region: ${region}
+  zoneType: "private"

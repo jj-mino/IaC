@@ -1,0 +1,123 @@
+# createConfigmap: true
+
+rbac:
+  pspEnabled: true
+  pspUseAppArmor: true
+
+image:
+  tag: 10.0.3
+
+ingress:
+  enabled: true
+  path: /
+  pathType: Prefix
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: "${ingress-class}"
+    alb.ingress.kubernetes.io/certificate-arn: "${certificate-arn}"
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS":443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: "15"
+    alb.ingress.kubernetes.io/healthcheck-port: traffic-port
+    alb.ingress.kubernetes.io/healthcheck-protocol: HTTP
+    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: "5"
+    alb.ingress.kubernetes.io/healthy-threshold-count: "2"
+    alb.ingress.kubernetes.io/success-codes: 200,302
+    alb.ingress.kubernetes.io/load-balancer-attributes: deletion_protection.enabled=true
+  labels: {}
+  hosts:
+    - ${host}
+
+persistence:
+  enabled: true
+  size: 5Gi
+
+# Administrator credentials when not using an existing secret (see below)
+adminUser: admin
+adminPassword: ""
+envFromSecret: ${google-client-creds-secret}
+
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      - name: prometheus
+        type: prometheus
+        url: http://thanos-query-frontend.observability:9090
+        access: proxy
+        isDefault: true
+        editable: true
+
+sidecar:
+  alerts:
+    enabled: true
+  dashboards:
+    enabled: true
+    label: grafana_dashboard
+    searchNamespace: "observability"
+    folder: /var/lib/grafana/dashboards
+    folderAnnotation: grafana_folder
+    foldersFromFilesStructure: true
+    provider:
+      foldersFromFilesStructure: true
+
+grafana.ini:
+  server:
+    root_url: https://grafana-${workspace}.myawesome.com
+  paths:
+    data: /var/lib/grafana/data
+    logs: /var/log/grafana
+    plugins: /var/lib/grafana/plugins
+    provisioning: /etc/grafana/provisioning
+  analytics:
+    check_for_updates: true
+  log:
+    mode: console
+    level: "warn"
+  grafana_net:
+    url: https://grafana.net
+  smtp:
+    enabled: true
+    host: "smtp.gmail.com:587"
+    user: "templast121@gmail.com"
+    password: "temp@121"
+    skip_verify: true
+    from_address: "templast121@gmail.com"
+    from_name: "Grafana"
+  auth.google:
+    enabled: true
+    client_id: ""
+    client_secret: ""
+    scopes: https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email
+    auth_url: https://accounts.google.com/o/oauth2/auth
+    token_url: https://accounts.google.com/o/oauth2/token
+    allowed_domains: synapsefi.com
+    allow_sign_up: true
+  users:
+    auto_assign_org: true
+    auto_assign_org_role: Viewer # Default role new users will be automatically assigned
+    viewers_can_edit: true # allow viewers to edit but don't save
+
+  # legacy alert system
+  alerting:
+    enabled: %{ if grafana_unified_alerting_enabled }false%{ else }true%{ endif }
+  unified_alerting:
+    enabled: %{ if grafana_unified_alerting_enabled }true%{ else }false%{ endif }
+  force_migration: true
+
+smtp:
+  enabled: true
+
+podAnnotations:
+  ad.datadoghq.com/grafana.check_names: |
+    ["openmetrics"]
+  ad.datadoghq.com/grafana.init_configs: |
+    [{}]
+  ad.datadoghq.com/grafana.instances: |
+    [
+      {
+        "openmetrics_endpoint": "http://%%host%%:3000/metrics",
+        "metrics": [ "grafana_api_response_status","grafana_build_info","grafana_http_request_duration_seconds","grafana_page_response_status" ]
+      }
+    ]

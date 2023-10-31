@@ -1,0 +1,92 @@
+apiVersion: 1
+groups:
+    - orgId: 1
+      name: WARNING
+      folder: alert-rules
+      interval: 2m
+      rules:
+        - uid: QIw_UbE4g
+          title: EKS Pods CPU > 80%
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: P1809F7CD0C75ACF3
+              model:
+                editorMode: code
+                expr: sum(rate(container_cpu_usage_seconds_total{container!="POD", container!=""}[$__rate_interval])) by (namespace,pod,container) / max(kube_pod_container_resource_limits{container!="POD", container!="", resource="cpu"}) by (namespace,pod,container) * 100
+                hide: false
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: true
+                refId: A
+            - refId: B
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params: []
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - B
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                hide: false
+                intervalMs: 1000
+                maxDataPoints: 43200
+                reducer: last
+                refId: B
+                type: reduce
+            - refId: C
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 80
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: B
+                hide: false
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          noDataState: NoData
+          execErrState: Error
+          for: 1m
+          annotations:
+            summary: '• {{ $values.B.Labels.namespace}}/{{ $values.B.Labels.pod}} [{{ $values.B.Labels.container }}]: `{{ printf "%.2f" $values.B.Value }}%`'
+          labels:
+            env_code: ${env_code}
+            severity: warning
+          isPaused: false

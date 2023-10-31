@@ -1,0 +1,22 @@
+targetSystem: "linux"
+datadog:
+  clusterName: ${CLUSTER_NAME}
+  tags:
+    env: ${ENV}
+    APP_ENV: ${APP_ENV}
+    ENV_NAME: ${ENV_NAME}
+    temptag: tempvalue
+  appKeyExistingSecret: datadog-external-secret
+  apiKeyExistingSecret: datadog-external-secret
+  site: datadoghq.com
+  logs:
+    enabled: true
+    containerCollectAll: true
+  kubelet:
+    tlsVerify: false
+  apm:
+    socketEnabled: false
+    portEnabled: true
+    port: 8126
+    socketPath: /var/run/datadog/apm.socket
+    hostSocketPath: /var/run/datadog/
